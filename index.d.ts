@@ -3,103 +3,103 @@
 export class Parser {
   constructor(p: any);
 
-  ap(parserOfFunction: any): any;
+  ap(parserOfFunction: any): Parser;
 
-  chain(fn: any): any;
+  chain(fn: any): Parser;
 
-  chainFromData(fn: any): any;
+  chainFromData(fn: any): Parser;
 
-  errorChain(fn: any): any;
+  errorChain(fn: any): Parser;
 
-  errorMap(fn: any): any;
+  errorMap(fn: any): Parser;
 
-  ["fantasy-land/ap"](parserOfFunction: any): any;
+  ["fantasy-land/ap"](parserOfFunction: any): Parser;
 
-  ["fantasy-land/chain"](fn: any): any;
+  ["fantasy-land/chain"](fn: any): Parser;
 
-  ["fantasy-land/map"](fn: any): any;
+  ["fantasy-land/map"](fn: any): Parser;
 
   fork(target: any, errorFn: any, successFn: any): any;
 
-  map(fn: any): any;
+  map(fn: any): Parser;
 
-  mapData(fn: any): any;
+  mapData(fn: any): Parser;
 
-  mapFromData(fn: any): any;
+  mapFromData(fn: any): Parser;
 
   run(target: any): any;
 
-  static of(x: any): any;
+  static of(x: any): Parser;
 
 }
 
-export function anyCharExcept(parser: any): any;
+export function anyCharExcept(parser: Parser): Parser;
 
-export function anyOfString(s: any): any;
+export function anyOfString(s: any): Parser;
 
-export function anythingExcept(parser: any): any;
+export function anythingExcept(parser: Parser): Parser;
 
-export function between(leftParser: any): any;
+export function between(leftParser: Parser): (rightParser: Parser) => (parser: Parser) => Parser;
 
-export function choice(parsers: any): any;
+export function choice(parsers: Parser[]): Parser;
 
-export function composeParsers(parsers: any): any;
+export function composeParsers(parsers: Parser[]): Parser;
 
-export function coroutine(g: any): any;
+export function coroutine(g: any): Parser;
 
-export function decide(fn: any): any;
+export function decide(fn: any): Parser;
 
-export function either(parser: any): any;
+export function either(parser: Parser): Parser;
 
-export function errorMapTo(fn: any): any;
+export function errorMapTo(fn: any): Parser;
 
-export function everyCharUntil(parser: any): void;
+export function everyCharUntil(parser: Parser): Parser;
 
-export function everythingUntil(parser: any): any;
+export function everythingUntil(parser: Parser): Parser;
 
-export function exactly(n: any): any;
+export function exactly(n: any): Parser;
 
-export function fail(errorMessage: any): any;
+export function fail(errorMessage: any): Parser;
 
-export function lookAhead(parser: any): any;
+export function lookAhead(parser: Parser): Parser;
 
-export function many(parser: any): any;
+export function many(parser: Parser): Parser;
 
-export function many1(parser: any): any;
+export function many1(parser: Parser): Parser;
 
-export function mapData(fn: any): any;
+export function mapData(fn: any): Parser;
 
-export function mapTo(fn: any): any;
+export function mapTo(fn: any): Parser;
 
-export function namedSequenceOf(pairedParsers: any): any;
+export function namedSequenceOf(pairedParsers: any): Parser;
 
-export function parse(parser: any): any;
+export function parse(parser: Parser): any;
 
-export function pipeParsers(parsers: any): any;
+export function pipeParsers(parsers: Parser[]): Parser;
 
-export function possibly(parser: any): any;
+export function possibly(parser: Parser): Parser;
 
-export function recursiveParser(parserThunk: any): any;
+export function recursiveParser(parserThunk: () => Parser): Parser;
 
-export function regex(re: any): any;
+export function regex(re: any): Parser;
 
-export function sepBy(sepParser: any): any;
+export function sepBy(sepParser: Parser): (valueParser: Parser) => Parser;
 
-export function sepBy1(sepParser: any): any;
+export function sepBy1(sepParser: Parser): (valueParser: Parser) => Parser;
 
-export function sequenceOf(parsers: any): any;
+export function sequenceOf(parsers: Parser[]): Parser;
 
-export function setData(x: any): any;
+export function setData(x: any): Parser;
 
-export function skip(parser: any): any;
+export function skip(parser: Parser): Parser;
 
-export function str(s: any): any;
+export function str(s: any): Parser;
 
-export function succeedWith(x: any): any;
+export function succeedWith(x: any): Parser;
 
-export function takeLeft(leftParser: any): any;
+export function takeLeft(leftParser: Parser): (rightParser: Parser) => any;
 
-export function takeRight(leftParser: any): any;
+export function takeRight(leftParser: Parser): (rightParser: Parser) => any;
 
 export function tapParser(fn: any): any;
 
@@ -107,7 +107,7 @@ export function toPromise(result: any): any;
 
 export function toValue(result: any): any;
 
-export function withData(parser: any): any;
+export function withData(parser: Parser): any;
 
 export const anyChar: Parser
 
