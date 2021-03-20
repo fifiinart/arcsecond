@@ -1,130 +1,195 @@
 // Type definitions for arcsecond 3.1 by Fifi Art <https://github.com/fifiinart>
+// Based off work by Jeff Rose <http://github.com/jeffrose>
+  interface Success<A, S> {
+    isError: false;
+    result: A;
+    index: number;
+    data: S;
+  }
 
-export class Parser {
-  constructor(p: any);
+  interface Failure<S> {
+    isError: true;
+    error: string;
+    index: number;
+    data: S;
+  }
 
-  ap(parserOfFunction: any): Parser;
+  type Output<A, S> = Success<A, S> | Failure<S>
 
-  chain(fn: any): Parser;
+  interface InputState {
+    dataView: DataView;
+    inputType: "string" | "arrayBuffer" | "typedArray" | "dataView"
+    isError: false;
+    error: null;
+    data: null;
+    index: number;
+    result: null;
+  }
+  interface SuccessState<A, S> {
+    dataView: DataView;
+    inputType: "string" | "arrayBuffer" | "typedArray" | "dataView"
+    isError: false;
+    error: unknown;
+    data: S;
+    index: number;
+    result: A;
+  }
+  interface ErrorState<S> {
+    dataView: DataView;
+    inputType: "string" | "arrayBuffer" | "typedArray" | "dataView"
+    isError: true;
+    error: string;
+    data: S;
+    index: number;
+    result: unknown;
+  }
+  type OutputState<A, S> = SuccessState<A, S> | ErrorState<S>;
+  type State<A, S> = InputState | OutputState<A, S>
 
-  chainFromData(fn: any): Parser;
+  type ParserStateTransformer<A, S, B, T> = (state: State<A, S>) => OutputState<B, T>
 
-  errorChain(fn: any): Parser;
+  interface StateData<A, S> {
+    result: A;
+    data: S;
+  }
 
-  errorMap(fn: any): Parser;
+  interface ErrorData<S> {
+    error: string;
+    index: number;
+    data: S;
+  }
 
-  ["fantasy-land/ap"](parserOfFunction: any): Parser;
+  type TypedArray = Uint8Array | Uint8ClampedArray | Uint16Array | Uint32Array | Int8Array | Int16Array | Int32Array | Float32Array | Float64Array;
 
-  ["fantasy-land/chain"](fn: any): Parser;
+  type ValidTarget = string | DataView | ArrayBuffer | TypedArray;
 
-  ["fantasy-land/map"](fn: any): Parser;
+  export class Parser<A = string, S = null> {
+    constructor(p: ParserStateTransformer<any, any, A, S>);
 
-  fork(target: any, errorFn: any, successFn: any): any;
+    private p: ParserStateTransformer<any, any, A, S>
 
-  map(fn: any): Parser;
+    ap<B>(parserOfFunction: Parser<(x: A) => B>): Parser<B, S>;
 
-  mapData(fn: any): Parser;
+    chain<B>(fn: (result: A) => Parser<B>): Parser<B, S>;
 
-  mapFromData(fn: any): Parser;
+    chainFromData<B>(fn: (state: StateData<A, S>) => Parser<B>): Parser<B, S>;
 
-  run(target: any): any;
+    errorChain<B>(fn: (errorData: ErrorData<S>) => Parser<B>): Parser<B, S>;
 
-  static of(x: any): Parser;
+    errorMap(fn: (errorData: ErrorData<S>) => string): Parser<A, S>;
 
-}
+    ["fantasy-land/ap"]<B>(parserOfFunction: Parser<(x: A) => B>): Parser<B, S>;
 
-export function anyCharExcept(parser: Parser): Parser;
+    ["fantasy-land/chain"]<B>(fn: (result: A) => Parser<B>): Parser<B, S>;
 
-export function anyOfString(s: any): Parser;
+    ["fantasy-land/map"]<B>(fn: (x: A) => B): Parser<B, S>;
 
-export function anythingExcept(parser: Parser): Parser;
+    fork<F, B>(target: ValidTarget, errorFn: (error: string, errorState: ErrorState<S>) => F, successFn: (result: A, successState: SuccessState<A, S>) => B): F | B;
 
-export function between(leftParser: Parser): (rightParser: Parser) => (parser: Parser) => Parser;
+    map<B>(fn: (x: A) => B): Parser<B, S>;
 
-export function choice(parsers: Parser[]): Parser;
+    mapData<T>(fn: (data: S) => T): Parser<A, T>;
 
-export function composeParsers(parsers: Parser[]): Parser;
+    mapFromData<B>(fn: (state: StateData<A, S>) => B): Parser<B, S>;
 
-export function coroutine(g: any): Parser;
+    run(target: ValidTarget): Output<A, S>;
 
-export function decide(fn: any): Parser;
+    static of<A>(x: A): Parser<A>;
 
-export function either(parser: Parser): Parser;
+  }
 
-export function errorMapTo(fn: any): Parser;
+  export function anyCharExcept(parser: Parser): Parser;
 
-export function everyCharUntil(parser: Parser): Parser;
+  export function anyOfString(s: any): Parser;
 
-export function everythingUntil(parser: Parser): Parser;
+  export function anythingExcept(parser: Parser): Parser;
 
-export function exactly(n: any): Parser;
+  export function between(leftParser: Parser): (rightParser: Parser) => (parser: Parser) => Parser;
 
-export function fail(errorMessage: any): Parser;
+  export function choice(parsers: Parser[]): Parser;
 
-export function lookAhead(parser: Parser): Parser;
+  export function composeParsers(parsers: Parser[]): Parser;
 
-export function many(parser: Parser): Parser;
+  export function coroutine(g: any): Parser;
 
-export function many1(parser: Parser): Parser;
+  export function decide(fn: any): Parser;
 
-export function mapData(fn: any): Parser;
+  export function either(parser: Parser): Parser;
 
-export function mapTo(fn: any): Parser;
+  export function errorMapTo(fn: any): Parser;
 
-export function namedSequenceOf(pairedParsers: any): Parser;
+  export function everyCharUntil(parser: Parser): Parser;
 
-export function parse(parser: Parser): any;
+  export function everythingUntil(parser: Parser): Parser;
 
-export function pipeParsers(parsers: Parser[]): Parser;
+  export function exactly(n: any): Parser;
 
-export function possibly(parser: Parser): Parser;
+  export function fail(errorMessage: any): Parser;
 
-export function recursiveParser(parserThunk: () => Parser): Parser;
+  export function lookAhead(parser: Parser): Parser;
 
-export function regex(re: any): Parser;
+  export function many(parser: Parser): Parser;
 
-export function sepBy(sepParser: Parser): (valueParser: Parser) => Parser;
+  export function many1(parser: Parser): Parser;
 
-export function sepBy1(sepParser: Parser): (valueParser: Parser) => Parser;
+  export function mapData(fn: any): Parser;
 
-export function sequenceOf(parsers: Parser[]): Parser;
+  export function mapTo(fn: any): Parser;
 
-export function setData(x: any): Parser;
+  export function namedSequenceOf(pairedParsers: any): Parser;
 
-export function skip(parser: Parser): Parser;
+  export function parse(parser: Parser): any;
 
-export function str(s: any): Parser;
+  export function pipeParsers(parsers: Parser[]): Parser;
 
-export function succeedWith(x: any): Parser;
+  export function possibly(parser: Parser): Parser;
 
-export function takeLeft(leftParser: Parser): (rightParser: Parser) => any;
+  export function recursiveParser(parserThunk: () => Parser): Parser;
 
-export function takeRight(leftParser: Parser): (rightParser: Parser) => any;
+  export function regex(re: any): Parser;
 
-export function tapParser(fn: any): any;
+  export function sepBy(sepParser: Parser): (valueParser: Parser) => Parser;
 
-export function toPromise(result: any): any;
+  export function sepBy1(sepParser: Parser): (valueParser: Parser) => Parser;
 
-export function toValue(result: any): any;
+  export function sequenceOf(parsers: Parser[]): Parser;
 
-export function withData(parser: Parser): any;
+  export function setData(x: any): Parser;
 
-export const anyChar: Parser
+  export function skip(parser: Parser): Parser;
 
-export const digit: Parser
+  export function str<T extends string>(s: T): Parser<T>;
 
-export const digits: Parser
+  export function succeedWith(x: any): Parser;
 
-export const endOfInput: Parser
+  export function takeLeft(leftParser: Parser): (rightParser: Parser) => any;
 
-export const getData: Parser
+  export function takeRight(leftParser: Parser): (rightParser: Parser) => any;
 
-export const letter: Parser
+  export function tapParser(fn: any): any;
 
-export const letters: Parser
+  export function toPromise(result: any): any;
 
-export const optionalWhitespace: Parser
+  export function toValue<A>(result: Output<A, any>): A;
 
-export const peek: Parser
+  export function withData(parser: Parser): any;
 
-export const whitespace: Parser
+  export const anyChar: Parser
+
+  export const digit: Parser
+
+  export const digits: Parser
+
+  export const endOfInput: Parser
+
+  export const getData: Parser
+
+  export const letter: Parser
+
+  export const letters: Parser
+
+  export const optionalWhitespace: Parser
+
+  export const peek: Parser
+
+  export const whitespace: Parser
