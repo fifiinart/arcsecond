@@ -1,195 +1,215 @@
 // Type definitions for arcsecond 3.1 by Fifi Art <https://github.com/fifiinart>
 // Based off work by Jeff Rose <http://github.com/jeffrose>
-  interface Success<A, S> {
-    isError: false;
-    result: A;
-    index: number;
-    data: S;
-  }
 
-  interface Failure<S> {
-    isError: true;
-    error: string;
-    index: number;
-    data: S;
-  }
+interface Success<A, S> {
+  isError: false;
+  result: A;
+  index: number;
+  data: S;
+}
 
-  type Output<A, S> = Success<A, S> | Failure<S>
+interface Failure<S> {
+  isError: true;
+  error: string;
+  index: number;
+  data: S;
+}
 
-  interface InputState {
-    dataView: DataView;
-    inputType: "string" | "arrayBuffer" | "typedArray" | "dataView"
-    isError: false;
-    error: null;
-    data: null;
-    index: number;
-    result: null;
-  }
-  interface SuccessState<A, S> {
-    dataView: DataView;
-    inputType: "string" | "arrayBuffer" | "typedArray" | "dataView"
-    isError: false;
-    error: unknown;
-    data: S;
-    index: number;
-    result: A;
-  }
-  interface ErrorState<S> {
-    dataView: DataView;
-    inputType: "string" | "arrayBuffer" | "typedArray" | "dataView"
-    isError: true;
-    error: string;
-    data: S;
-    index: number;
-    result: unknown;
-  }
-  type OutputState<A, S> = SuccessState<A, S> | ErrorState<S>;
-  type State<A, S> = InputState | OutputState<A, S>
+type Output<A, S> = Success<A, S> | Failure<S>
 
-  type ParserStateTransformer<A, S, B, T> = (state: State<A, S>) => OutputState<B, T>
+interface InputState {
+  dataView: DataView;
+  inputType: "string" | "arrayBuffer" | "typedArray" | "dataView"
+  isError: false;
+  error: null;
+  data: null;
+  index: number;
+  result: null;
+}
+interface SuccessState<A, S> {
+  dataView: DataView;
+  inputType: "string" | "arrayBuffer" | "typedArray" | "dataView"
+  isError: false;
+  error: unknown;
+  data: S;
+  index: number;
+  result: A;
+}
+interface ErrorState<S> {
+  dataView: DataView;
+  inputType: "string" | "arrayBuffer" | "typedArray" | "dataView"
+  isError: true;
+  error: string;
+  data: S;
+  index: number;
+  result: unknown;
+}
+type OutputState<A, S> = SuccessState<A, S> | ErrorState<S>;
+type State<A, S> = InputState | OutputState<A, S>
 
-  interface StateData<A, S> {
-    result: A;
-    data: S;
-  }
+type Either<A> = {
+  isError: true; value: string;
+} | {
+  isError: false; value: A;
+}
 
-  interface ErrorData<S> {
-    error: string;
-    index: number;
-    data: S;
-  }
+type ParserStateTransformer<A, S, B, T> = (state: State<A, S>) => OutputState<B, T>
 
-  type TypedArray = Uint8Array | Uint8ClampedArray | Uint16Array | Uint32Array | Int8Array | Int16Array | Int32Array | Float32Array | Float64Array;
+interface StateData<A, S> {
+  result: A;
+  data: S;
+}
 
-  type ValidTarget = string | DataView | ArrayBuffer | TypedArray;
+interface ErrorData<S> {
+  error: string;
+  index: number;
+  data: S;
+}
 
-  export class Parser<A = string, S = null> {
-    constructor(p: ParserStateTransformer<any, any, A, S>);
+type TypedArray = Uint8Array | Uint8ClampedArray | Uint16Array | Uint32Array | Int8Array | Int16Array | Int32Array | Float32Array | Float64Array;
 
-    private p: ParserStateTransformer<any, any, A, S>
+type ValidTarget = string | DataView | ArrayBuffer | TypedArray;
 
-    ap<B>(parserOfFunction: Parser<(x: A) => B>): Parser<B, S>;
+export type ResultOfParser<T> = T extends Parser<infer A, any> ? A : never
 
-    chain<B>(fn: (result: A) => Parser<B>): Parser<B, S>;
+export type DataOfParser<T> = T extends Parser<any, infer S> ? S : never
 
-    chainFromData<B>(fn: (state: StateData<A, S>) => Parser<B>): Parser<B, S>;
+type NTupleOf<N extends number, T, S extends T[] = []> = S["length"] extends N ? S : NTupleOf<N, T, [T, ...S]>;
 
-    errorChain<B>(fn: (errorData: ErrorData<S>) => Parser<B>): Parser<B, S>;
+export class Parser<A = string, S = null> {
 
-    errorMap(fn: (errorData: ErrorData<S>) => string): Parser<A, S>;
+  constructor(p: ParserStateTransformer<any, any, A, S>);
 
-    ["fantasy-land/ap"]<B>(parserOfFunction: Parser<(x: A) => B>): Parser<B, S>;
+  private p: ParserStateTransformer<any, any, A, S>
 
-    ["fantasy-land/chain"]<B>(fn: (result: A) => Parser<B>): Parser<B, S>;
+  run(target: ValidTarget): Output<A, S>;
 
-    ["fantasy-land/map"]<B>(fn: (x: A) => B): Parser<B, S>;
+  fork<F, B>(target: ValidTarget, errorFn: (error: string, errorState: ErrorState<S>) => F, successFn: (result: A, successState: SuccessState<A, S>) => B): F | B;
 
-    fork<F, B>(target: ValidTarget, errorFn: (error: string, errorState: ErrorState<S>) => F, successFn: (result: A, successState: SuccessState<A, S>) => B): F | B;
+  ["fantasy-land/map"]<B>(fn: (x: A) => B): Parser<B, S>;
 
-    map<B>(fn: (x: A) => B): Parser<B, S>;
+  ["fantasy-land/chain"]<B>(fn: (result: A) => Parser<B>): Parser<B, S>;
 
-    mapData<T>(fn: (data: S) => T): Parser<A, T>;
+  ["fantasy-land/ap"]<B>(parserOfFunction: Parser<(x: A) => B>): Parser<B, S>;
 
-    mapFromData<B>(fn: (state: StateData<A, S>) => B): Parser<B, S>;
+  errorMap(fn: (errorData: ErrorData<S>) => string): Parser<A, S>;
 
-    run(target: ValidTarget): Output<A, S>;
+  errorChain<B>(fn: (errorData: ErrorData<S>) => Parser<B>): Parser<B, S>;
 
-    static of<A>(x: A): Parser<A>;
+  mapFromData<B>(fn: (state: StateData<A, S>) => B): Parser<B, S>;
 
-  }
+  chainFromData<B>(fn: (state: StateData<A, S>) => Parser<B>): Parser<B, S>;
 
-  export function anyCharExcept(parser: Parser): Parser;
+  mapData<T>(fn: (data: S) => T): Parser<A, T>;
 
-  export function anyOfString(s: any): Parser;
+  static ["fantasy-land/of"]<A>(x: A): Parser<A>
 
-  export function anythingExcept(parser: Parser): Parser;
+  map<B>(fn: (x: A) => B): Parser<B, S>;
 
-  export function between(leftParser: Parser): (rightParser: Parser) => (parser: Parser) => Parser;
+  chain<B>(fn: (result: A) => Parser<B>): Parser<B, S>;
 
-  export function choice(parsers: Parser[]): Parser;
+  ap<B>(parserOfFunction: Parser<(x: A) => B>): Parser<B, S>;
 
-  export function composeParsers(parsers: Parser[]): Parser;
+  static of<A>(x: A): Parser<A>;
 
-  export function coroutine(g: any): Parser;
+}
 
-  export function decide(fn: any): Parser;
+type GetDataParser<T> = T extends Parser<any, infer S> ? Parser<S, S> : never;
 
-  export function either(parser: Parser): Parser;
+export const getData: GetDataParser<Parser>
 
-  export function errorMapTo(fn: any): Parser;
+export function setData<A, T>(x: T): Parser<A, T>;
 
-  export function everyCharUntil(parser: Parser): Parser;
+export function mapData<A, S>(fn: (x: S) => S): Parser<A, S>;
 
-  export function everythingUntil(parser: Parser): Parser;
+export function withData<A, S>(parser: Parser<A, S>): (stateData: S) => Parser<A, S>;
 
-  export function exactly(n: any): Parser;
+export function pipeParsers<A, S = null>(parsers: [...Parser<any, any>[], Parser<A, S>]): Parser<A, S>;
 
-  export function fail(errorMessage: any): Parser;
+export function composeParsers<A, S = null>(parsers: [Parser<A, S>, ...Parser<any, any>[]]): Parser<A, S>;
 
-  export function lookAhead(parser: Parser): Parser;
+export function tapParser<A, S = null>(fn: (x: A) => void): Parser<A, S>;
 
-  export function many(parser: Parser): Parser;
+export function parse<A, S>(parser: Parser<A, S>): (target: ValidTarget) => Output<A, S>;
 
-  export function many1(parser: Parser): Parser;
+export function decide<A, B, S>(fn: (result: A) => Parser<B, S>): Parser<B, S>;
 
-  export function mapData(fn: any): Parser;
+export function fail(errorMessage: string): Parser;
 
-  export function mapTo(fn: any): Parser;
+export function succeedWith<A>(x: A): Parser<A>;
 
-  export function namedSequenceOf(pairedParsers: any): Parser;
+export function either<A, S>(parser: Parser<A, S>): Parser<Either<A>, S>;
 
-  export function parse(parser: Parser): any;
+export function coroutine<P extends Parser<any, any>, A>(g: () => Generator<P, A, ResultOfParser<P>>): Parser<A>;
 
-  export function pipeParsers(parsers: Parser[]): Parser;
+export function exactly<N extends number, A, S>(n: N): Parser<NTupleOf<N, A>, S>;
 
-  export function possibly(parser: Parser): Parser;
+export function many<A, S>(parser: Parser<A, S>): Parser<A[], S>;
 
-  export function recursiveParser(parserThunk: () => Parser): Parser;
+export function many1<A, S>(parser: Parser<A, S>): Parser<A[], S>;
 
-  export function regex(re: any): Parser;
+export function mapTo<A, B, S>(fn: (x: A) => B): Parser<B, S>;
 
-  export function sepBy(sepParser: Parser): (valueParser: Parser) => Parser;
+export function errorMapTo<A, S>(fn: (error: string, index: number, data: S) => string): Parser<A, S>;
 
-  export function sepBy1(sepParser: Parser): (valueParser: Parser) => Parser;
+export function char<T extends string>(s: T): Parser<T>;
 
-  export function sequenceOf(parsers: Parser[]): Parser;
+export const anyChar: Parser
 
-  export function setData(x: any): Parser;
+export const peek: Parser
 
-  export function skip(parser: Parser): Parser;
+export function str<T extends string>(s: T): Parser<T>;
 
-  export function str<T extends string>(s: T): Parser<T>;
+export function regex(re: RegExp): Parser;
 
-  export function succeedWith(x: any): Parser;
+export const digit: Parser
 
-  export function takeLeft(leftParser: Parser): (rightParser: Parser) => any;
+export const digits: Parser
 
-  export function takeRight(leftParser: Parser): (rightParser: Parser) => any;
+export const letter: Parser
 
-  export function tapParser(fn: any): any;
+export const letters: Parser
 
-  export function toPromise(result: any): any;
+export function anyOfString<T extends string>(s: T): Parser<T[number]>;
 
-  export function toValue<A>(result: Output<A, any>): A;
+export function namedSequenceOf<O extends object, S = null>(pairedParsers: { [K in keyof O]: [K, Parser<O[K], any>] }[keyof O][]): Parser<O, S>
 
-  export function withData(parser: Parser): any;
+export function sequenceOf<A extends any[], S = null>(parsers: { [I in keyof A]: Parser<A[I], any> }): Parser<A, S>
 
-  export const anyChar: Parser
+export function sepBy<A, S = null>(sepParser: Parser<any, any>): (valueParser: Parser<A>) => Parser<A[], S>;
 
-  export const digit: Parser
+export function sepBy1<A, S = null>(sepParser: Parser<any, any>): (valueParser: Parser<A>) => Parser<A[], S>;
 
-  export const digits: Parser
+export function choice<A extends any[], S = null>(parsers: { [I in keyof A]: Parser<A[I], any> }): Parser<A[number], S>;
 
-  export const endOfInput: Parser
+export function between(leftParser: Parser<any, any>): (rightParser: Parser<any, any>) => <A, S>(parser: Parser<A, S>) => Parser<A, S>;
 
-  export const getData: Parser
+export function everythingUntil(parser: Parser): Parser;
 
-  export const letter: Parser
+export function everyCharUntil(parser: Parser): Parser;
 
-  export const letters: Parser
+export function anyCharExcept(parser: Parser): Parser;
 
-  export const optionalWhitespace: Parser
+export function lookAhead<A, S>(parser: Parser<A, S>): Parser<A, S>;
 
-  export const peek: Parser
+export function possibly<A, S>(parser: Parser<A, S>): Parser<A | null, S>;
 
-  export const whitespace: Parser
+export function skip<A, S>(parser: Parser<A, S>): Parser<A, S>;
+
+export const endOfInput: Parser
+
+export const whitespace: Parser
+
+export const optionalWhitespace: Parser
+
+export function recursiveParser<A, S>(parserThunk: () => Parser<A, S>): Parser<A, S>;
+
+export function takeLeft<A, S>(leftParser: Parser<A, S>): (rightParser: Parser<any, any>) => Parser<A, S>;
+
+export function takeRight<A, S>(leftParser: Parser<any, any>): (rightParser: Parser<A, S>) => Parser<A, S>;
+
+export function toPromise<A>(result: Output<A, any>): Promise<A>;
+
+export function toValue<A>(result: Output<A, any>): A;
+
+export function anythingExcept<A, S>(parser: Parser<A, S>): Parser;
